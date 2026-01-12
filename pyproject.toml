@@ -9,7 +9,7 @@ description = "Topic modeling utilities (LDA/BERTopic) for MOROCO."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "artifici-lda",
+    "artifici-lda @ git+https://github.com/ArtificiAI/Multilingual-Latent-Dirichlet-Allocation-LDA.git",
     "bertopic",
     "datasets<4.0.0",
     "matplotlib>=3.8.2",
@@ -26,10 +26,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.uv.sources]
-artifici-lda = { git = "https://github.com/ArtificiAI/Multilingual-Latent-Dirichlet-Allocation-LDA.git" }
