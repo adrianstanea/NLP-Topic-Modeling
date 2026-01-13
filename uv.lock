@@ -1065,6 +1065,7 @@ dependencies = [
     { name = "sentencepiece" },
     { name = "snowballstemmer" },
     { name = "torch" },
+    { name = "tqdm" },
     { name = "transformers" },
 ]
 
@@ -1083,6 +1084,7 @@ requires-dist = [
     { name = "sentencepiece" },
     { name = "snowballstemmer" },
     { name = "torch" },
+    { name = "tqdm", specifier = ">=4.67.1" },
     { name = "transformers" },
 ]
 
