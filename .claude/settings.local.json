@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv sync)",
+      "Bash(.venv/bin/pytest tests/test_preprocessing.py -v)",
+      "Bash(.venv/bin/python -m spacy download ro_core_news_sm)",
+      "Bash(uv pip install https://github.com/explosion/spacy-models/releases/download/ro_core_news_sm-3.8.0/ro_core_news_sm-3.8.0-py3-none-any.whl)",
+      "Bash(.venv/bin/pytest tests/ -v --tb=short)"
+    ]
+  }
+}

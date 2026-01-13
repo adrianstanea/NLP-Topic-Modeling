@@ -21,9 +21,21 @@ dependencies = [
     "seaborn>=0.13.2",
     "sentencepiece",
     "snowballstemmer",
+    "spacy>=3.7.0",
+    "stop-words>=2025.11.4",
+    "stopwordsiso>=0.6.1",
     "torch",
     "tqdm>=4.67.1",
     "transformers",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+ro = [
+    "spacy[lookups]",  # Romanian lemma lookup tables
 ]
 
 [tool.setuptools]
