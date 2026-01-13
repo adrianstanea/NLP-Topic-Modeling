@@ -123,6 +123,43 @@ def keep_romanian_chars(text: str) -> str:
     return pattern.sub('', text)
 
 
+# Pattern to match mid-word î (not at start or end of word)
+# Uses lookbehind and lookahead to ensure î is surrounded by letters
+MID_WORD_I_CIRCUMFLEX = re.compile(r'(?<=[a-zA-ZăâșțĂÂȘȚ])î(?=[a-zA-ZăâșțĂÂȘȚ])')
+MID_WORD_I_CIRCUMFLEX_UPPER = re.compile(r'(?<=[a-zA-ZăâșțĂÂȘȚ])Î(?=[a-zA-ZăâșțĂÂȘȚ])')
+
+
+def normalize_dialect(text: str) -> str:
+    """Normalize î/â orthographic variation to Romanian standard (â-form).
+
+    In Romanian orthography, both 'î' and 'â' represent the same sound /ɨ/.
+    Modern Romanian standard uses:
+    - 'î' at the beginning and end of words (e.g., "început", "coborî")
+    - 'â' in the middle of words (e.g., "sunt" not "sînt", "când" not "cînd")
+
+    The Moldovan/pre-1993 style uses 'î' everywhere. This function normalizes
+    to the modern Romanian standard for cross-dialect consistency in MAROCO.
+
+    Args:
+        text: Input text with potentially mixed î/â usage
+
+    Returns:
+        Text with mid-word î normalized to â (Romanian standard)
+
+    Examples:
+        >>> normalize_dialect("sînt")
+        'sânt'
+        >>> normalize_dialect("cînd")
+        'când'
+        >>> normalize_dialect("început")  # Word-initial î stays
+        'început'
+    """
+    # Replace mid-word î with â
+    text = MID_WORD_I_CIRCUMFLEX.sub('â', text)
+    text = MID_WORD_I_CIRCUMFLEX_UPPER.sub('Â', text)
+    return text
+
+
 def compose(*functions: Callable[[str], str]) -> Callable[[str], str]:
     """Compose multiple text transformation functions.
 

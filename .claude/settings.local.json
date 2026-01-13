@@ -5,7 +5,9 @@
       "Bash(.venv/bin/pytest tests/test_preprocessing.py -v)",
       "Bash(.venv/bin/python -m spacy download ro_core_news_sm)",
       "Bash(uv pip install https://github.com/explosion/spacy-models/releases/download/ro_core_news_sm-3.8.0/ro_core_news_sm-3.8.0-py3-none-any.whl)",
-      "Bash(.venv/bin/pytest tests/ -v --tb=short)"
+      "Bash(.venv/bin/pytest tests/ -v --tb=short)",
+      "Bash(.venv/bin/pytest tests/test_lda.py -v)",
+      "Bash(.venv/bin/python -c \"\nfrom nlp_topic_modeling.lda import train_topic_model\nfrom nlp_topic_modeling.data.loaders import load_MOROCO\n\n# Load a sample of MOROCO data\ndf, _ = load_MOROCO\\(split=''train''\\)\ndf_sample = df.sample\\(500, random_state=42\\)\n\nprint\\(f''Training on {len\\(df_sample\\)} documents...''\\)\n\n# Train topic model\npipeline = train_topic_model\\(\n    df_sample,\n    n_topics=6,\n    max_iter=50,  # Reduced for speed\n    show_progress=True\n\\)\n\nprint\\(''\\\\n=== Topics ===''\\)\npipeline.print_topics\\(n_words=8\\)\n\nprint\\(f''\\\\nVocabulary size: {pipeline.get_vocabulary_size\\(\\)}''\\)\nprint\\(''Integration test passed!''\\)\n\")"
     ]
   }
 }

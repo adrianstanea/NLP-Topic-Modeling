@@ -27,6 +27,7 @@ from .pipeline import (
 )
 from .normalizers import (
     normalize_diacritics,
+    normalize_dialect,
     remove_ne_tokens,
     remove_urls,
     remove_html_tags,
@@ -39,9 +40,10 @@ from .stopwords import (
     get_all_stopwords,
     get_ne_stopwords,
     get_domain_stopwords,
+    get_news_boilerplate_stopwords,
     filter_stopwords,
 )
-from .tokenizer import RomanianTokenizer, Token
+from .tokenizer import RomanianTokenizer, Token, TOPIC_POS_TAGS
 
 __all__ = [
     # Main API
@@ -53,8 +55,10 @@ __all__ = [
     # Tokenizer
     "RomanianTokenizer",
     "Token",
+    "TOPIC_POS_TAGS",
     # Normalizers
     "normalize_diacritics",
+    "normalize_dialect",
     "remove_ne_tokens",
     "remove_urls",
     "remove_html_tags",
@@ -66,5 +70,6 @@ __all__ = [
     "get_all_stopwords",
     "get_ne_stopwords",
     "get_domain_stopwords",
+    "get_news_boilerplate_stopwords",
     "filter_stopwords",
 ]

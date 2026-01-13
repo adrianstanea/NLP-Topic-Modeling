@@ -8,6 +8,10 @@ from nlp_topic_modeling.core.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Default POS tags for topic modeling (R4.1)
+# Focus on "topical skeleton" - nouns and adjectives, not verbs (writing style)
+TOPIC_POS_TAGS = {'NOUN', 'PROPN', 'ADJ'}
+
 
 class Token(NamedTuple):
     """Represents a processed token with linguistic information."""
@@ -144,3 +148,37 @@ class RomanianTokenizer:
         """
         doc = self.nlp(text)
         return [(token.text, token.pos_) for token in doc]
+
+    def tokenize_pos_filtered(
+        self,
+        text: str,
+        include_pos: set[str] | None = None
+    ) -> list[str]:
+        """Tokenize and lemmatize, keeping only specified POS tags.
+
+        For topic modeling, we typically keep NOUN, PROPN, ADJ to focus on
+        the "topical skeleton" rather than writing style (verbs). This
+        implements the Semantic Compression principle (R4.1).
+
+        Args:
+            text: Input text to tokenize
+            include_pos: Set of POS tags to include. Defaults to TOPIC_POS_TAGS
+                        (NOUN, PROPN, ADJ).
+
+        Returns:
+            List of lemmas for tokens matching the specified POS tags
+
+        Example:
+            >>> tokenizer = RomanianTokenizer()
+            >>> tokenizer.tokenize_pos_filtered("Ministrul a declarat că economia crește")
+            ['ministru', 'economie']  # Only nouns, no verbs
+        """
+        if include_pos is None:
+            include_pos = TOPIC_POS_TAGS
+
+        doc = self.nlp(text)
+        return [
+            token.lemma_.lower()
+            for token in doc
+            if token.pos_ in include_pos and not token.is_space
+        ]

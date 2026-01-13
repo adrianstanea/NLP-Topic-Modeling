@@ -74,12 +74,58 @@ def get_domain_stopwords() -> set[str]:
     }
 
 
-def get_all_stopwords(min_length: int = 0) -> set[str]:
+def get_news_boilerplate_stopwords() -> set[str]:
+    """Get news-specific boilerplate lemmas to suppress.
+
+    These lemmas are pervasive in Romanian news articles but provide
+    zero topical differentiation. They are primarily:
+    - Verbal noise: reporting verbs used across all news categories
+    - Web artifacts: metadata terms from online publishing
+
+    Returns:
+        Set of news boilerplate stopwords (lemma forms)
+    """
+    return {
+        # Verbal noise (R4.2) - reporting verbs
+        'declara', 'declarație', 'declaratie',
+        'spune', 'spus',
+        'preciza', 'precizat', 'precizie',
+        'afirma', 'afirmație', 'afirmatie', 'afirmat',
+        'transmite', 'transmis', 'transmisiune',
+        'anunța', 'anunta', 'anunț', 'anunt', 'anunțat', 'anuntat',
+        'comunica', 'comunicat', 'comunicare',
+        'informa', 'informație', 'informatie', 'informare',
+        'confirma', 'confirmat', 'confirmare',
+        'menționa', 'mentiona', 'menționat', 'mentionat',
+        'susține', 'sustine', 'susținut', 'sustinut',
+        'arăta', 'arata', 'arătat', 'aratat',
+        # Web artifacts (R4.2)
+        'sursă', 'sursa', 'surse',
+        'foto', 'fotografie', 'fotografii',
+        'video', 'videoclip',
+        'știre', 'stire', 'știri', 'stiri',
+        'articol', 'articole',
+        'link', 'legătură', 'legatura',
+        'redacția', 'redactia', 'redactor',
+        'corespondent', 'corespondență', 'corespondenta',
+        'citește', 'citeste', 'citire',
+        'actualizare', 'actualizat', 'update',
+        'breaking', 'exclusiv', 'urgent',
+        # Common news filler
+        'potrivit', 'conform', 'conform',
+        'context', 'cadru',
+        'moment', 'prezent',
+    }
+
+
+def get_all_stopwords(min_length: int = 0, include_news_boilerplate: bool = True) -> set[str]:
     """Get combined stopword list from all sources.
 
     Args:
         min_length: Minimum token length to include (tokens shorter than
                    this will be considered stopwords). Set to 0 to disable.
+        include_news_boilerplate: Whether to include news-specific boilerplate
+                                  stopwords. Default True for topic modeling.
 
     Returns:
         Combined set of all stopwords
@@ -88,6 +134,9 @@ def get_all_stopwords(min_length: int = 0) -> set[str]:
     all_stopwords.update(get_romanian_stopwords())
     all_stopwords.update(get_ne_stopwords())
     all_stopwords.update(get_domain_stopwords())
+
+    if include_news_boilerplate:
+        all_stopwords.update(get_news_boilerplate_stopwords())
 
     # Normalize to lowercase
     all_stopwords = {word.lower() for word in all_stopwords}

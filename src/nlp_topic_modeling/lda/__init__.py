@@ -1,85 +1,98 @@
-import numpy as np
-from sklearn.pipeline import Pipeline
-from artifici_lda.logic.stop_words_remover import StopWordsRemover
-from artifici_lda.logic.stemmer import Stemmer
-from artifici_lda.logic.count_vectorizer import CountVectorizer
-from artifici_lda.logic.lda import LDA
+"""TF-IDF + LDA hybrid pipeline for Romanian topic modeling.
 
-from tqdm.auto import tqdm
+This module provides a production-ready topic modeling pipeline that combines
+the noise-reduction benefits of TF-IDF with the probabilistic integrity of LDA.
 
-from .config import SUPPORTED_LANGUAGES, get_lda_pipeline_params
-from .utils import (
-    get_word_weightings,
-    link_topics_and_weightings,
-    get_top_comments,
-    split_1_grams_from_n_grams,
-)
+Architecture:
+    Input Text → Preprocessing → POS Filter → TF-IDF → Feature Selection → BoW → LDA
+
+Key Features:
+    - Filter-then-Feed: TF-IDF selects features, BoW feeds LDA
+    - POS Filtering: Focus on NOUN, PROPN, ADJ (topical skeleton)
+    - Dialect Normalization: Handles RO/MD î/â variation
+    - News Boilerplate Removal: Filters journalism-specific noise
+
+Example:
+    >>> from nlp_topic_modeling.lda import train_topic_model
+    >>> from nlp_topic_modeling.data.loaders import load_MOROCO
+    >>>
+    >>> df, _ = load_MOROCO()
+    >>> pipeline = train_topic_model(df, n_topics=6)
+    >>>
+    >>> # Print topics
+    >>> pipeline.print_topics(n_words=10)
+    >>>
+    >>> # Get topic distributions
+    >>> doc_topics = pipeline.fit_transform(df)
+"""
+
+import pandas as pd
+
+from .config import TFIDFConfig, LDAConfig, PipelineConfig
+from .vectorizer import HybridVectorizer
+from .model import TopicModel
+from .pipeline import TopicModelingPipeline
 
 
-def lda_pipeline(docs_list, n_topics, language=None, stopwords=None, show_progress: bool = True):
-    """Train an LDA and transform the comments.
+def train_topic_model(
+    df: pd.DataFrame,
+    n_topics: int = 6,
+    text_column: str = 'sample',
+    show_progress: bool = True,
+    **config_kwargs
+) -> TopicModelingPipeline:
+    """Train a topic model on a DataFrame.
 
-    :param docs_list: list of documents (texts)
-    :param n_topics: number of topics to extract
-    :param language: language of the documents
-    :param stopwords: list of stopwords to use
+    This is a convenience function that creates and fits a TopicModelingPipeline
+    with sensible defaults.
 
-    :return: trained LDA model and transformed documents
+    Args:
+        df: Input DataFrame with text data
+        n_topics: Number of topics to extract (default: 6 for MOROCO categories)
+        text_column: Name of the column containing text
+        show_progress: Whether to show progress bars
+        **config_kwargs: Additional configuration options passed to PipelineConfig
 
-    :raises ValueError: if the language is not supported
+    Returns:
+        Fitted TopicModelingPipeline
+
+    Example:
+        >>> pipeline = train_topic_model(df, n_topics=6)
+        >>> pipeline.print_topics()
     """
-    assert language in SUPPORTED_LANGUAGES, (
-        f"Language '{language}' is not supported. Supported languages: {SUPPORTED_LANGUAGES}"
-    )
-    assert isinstance(docs_list, list) and all(
-        isinstance(doc, str) for doc in docs_list
-    ), "docs_list must be a list of strings."
-    assert isinstance(n_topics, int) and n_topics > 0, (
-        "n_topics must be a positive integer."
-    )
-    assert stopwords is None or isinstance(stopwords, list), (
-        "stopwords must be a list or None."
-    )
+    # Build config
+    lda_config = LDAConfig(n_topics=n_topics)
+    tfidf_config = TFIDFConfig()
 
-    pbar = tqdm(total=6, disable=not show_progress, desc="LDA pipeline", unit="stage")
+    # Apply any overrides
+    for key, value in config_kwargs.items():
+        if hasattr(lda_config, key):
+            setattr(lda_config, key, value)
+        elif hasattr(tfidf_config, key):
+            setattr(tfidf_config, key, value)
 
-    lda_params = get_lda_pipeline_params(
-        n_topics=n_topics, language=language, stopwords=stopwords
+    config = PipelineConfig(
+        tfidf=tfidf_config,
+        lda=lda_config,
     )
 
-    lda_pipeline = Pipeline(
-        [
-            ("stopwords", StopWordsRemover()),
-            ("stemmer", Stemmer()),
-            ("count_vect", CountVectorizer()),
-            ("lda", LDA()),
-        ]
-    ).set_params(**lda_params)
+    # Create and fit pipeline
+    pipeline = TopicModelingPipeline(config)
+    pipeline.fit(df, text_column=text_column, show_progress=show_progress)
 
-    # Fit the data
-    pbar.set_description("LDA pipeline: fit_transform")
-    transformed_docs = lda_pipeline.fit_transform(docs_list)
-    pbar.update(1)
+    return pipeline
 
-    pbar.set_description("LDA pipeline: top comments")
-    top_comments = get_top_comments(docs_list, transformed_docs)
-    pbar.update(1)
 
-    pbar.set_description("LDA pipeline: topic words")
-    topic_words = lda_pipeline.inverse_transform(Xt=None)
-    pbar.update(1)
-
-    pbar.set_description("LDA pipeline: word weightings")
-    topic_words_weighting = get_word_weightings(lda_pipeline)
-    pbar.update(1)
-
-    pbar.set_description("LDA pipeline: link topics")
-    topics_words_and_weightings = link_topics_and_weightings(topic_words, topic_words_weighting)
-    pbar.update(1)
-
-    pbar.set_description("LDA pipeline: cleanup")
-    _1_grams, _2_grams = split_1_grams_from_n_grams(topics_words_and_weightings)
-    pbar.update(1)
-
-    pbar.close()
-    return transformed_docs, top_comments, _1_grams, _2_grams
+__all__ = [
+    # Configuration
+    'TFIDFConfig',
+    'LDAConfig',
+    'PipelineConfig',
+    # Components
+    'HybridVectorizer',
+    'TopicModel',
+    # Main pipeline
+    'TopicModelingPipeline',
+    # Convenience function
+    'train_topic_model',
+]
