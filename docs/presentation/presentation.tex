@@ -1,0 +1,487 @@
+\documentclass[pdf]{beamer}
+\mode<presentation>{}
+\usetheme{Madrid}
+\usecolortheme{beaver}
+\useinnertheme{rounded}
+
+% Packages
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage{tabularx}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% Graphics path
+\graphicspath{{../figures/}}
+
+% Metadata
+\hypersetup{
+    pdfauthor={Stanea Adrian-Bogdan},
+    pdftitle={Topic Modeling for Romanian News Articles},
+    pdfsubject={NLP Project Presentation},
+    pdfkeywords={Topic Modeling, LDA, TF-IDF, Romanian NLP, MOROCO},
+    colorlinks=false
+}
+
+% Title configuration
+\title[Topic Modeling - Romanian News]{Topic Modeling for Romanian News Articles}
+\subtitle{A TF-IDF and LDA Hybrid Approach}
+
+\author[Stanea Adrian-Bogdan]{
+    \texorpdfstring{Stanea Adrian-Bogdan}{}
+}
+\institute[(TUCN)]{
+    Technical University of Cluj-Napoca
+}
+\date[2026]{
+    NLP Seminar - 2026\\
+    \vspace{0.3cm}
+}
+
+%=================================================================
+% PRESENTATION BEGINS
+%=================================================================
+\begin{document}
+
+%=================================================================
+% TITLE SLIDE
+%=================================================================
+\begin{frame}
+    \titlepage
+\end{frame}
+
+%=================================================================
+% TABLE OF CONTENTS
+%=================================================================
+\begin{frame}{Outline}
+    \tableofcontents
+\end{frame}
+
+% Auto-show TOC at section start
+\AtBeginSection[]{
+    \begin{frame}{Outline}
+        \tableofcontents[currentsection]
+    \end{frame}
+}
+
+%=================================================================
+\section{Introduction}
+%=================================================================
+
+\begin{frame}{Project Overview \& Objectives}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \textbf{What is Topic Modeling?}
+            \begin{itemize}
+                \item Automatically discover hidden themes in text collections
+                \item Each topic = a group of related words
+                \item Documents can belong to multiple topics
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \textbf{The Challenge:}
+            \begin{itemize}
+                \item Romanian news articles need automatic thematic organization
+                \item Language-specific issues: diacritics, dialects
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.42\textwidth}
+            \begin{block}{Our Objectives}
+                \begin{enumerate}
+                    \item Romanian-specific preprocessing
+                    \item Hybrid TF-IDF + LDA pipeline
+                    \item Evaluate against known categories
+                    \item Analyze model confidence
+                \end{enumerate}
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+%=================================================================
+\begin{frame}{MOROCO Dataset at a Glance}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Dataset Overview:}
+            \begin{itemize}
+                \item \textbf{21,719} news articles
+                \item \textbf{6 categories}: politics, finance, sports, tech, science, culture
+                \item Romanian + Moldavian dialects
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \begin{block}{Key Observation}
+                \textbf{Class imbalance:} Politics \& finance = 52\% of corpus
+
+                \vspace{0.2cm}
+                \small
+                \textit{Experiment: 2,000 stratified sample}
+            \end{block}
+        \end{column}
+    \end{columns}
+
+    \vfill
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{MOROCO-category-distribution.png}
+        \caption{\footnotesize Category distribution}
+    \end{figure}
+\end{frame}
+
+%=================================================================
+\section{Methodology}
+%=================================================================
+
+\begin{frame}{Pipeline Architecture: Filter-then-Feed}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.95\textwidth]{pipeline-architecture.png}
+        \caption{Complete topic modeling pipeline}
+    \end{figure}
+
+    \begin{block}{Key Insight}
+        \begin{itemize}
+            \item TF-IDF selects informative features
+            \item BoW counts feed LDA (preserves probabilistic integrity)
+            \item LDA uncovers latent topics
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+%=================================================================
+\begin{frame}{Romanian-Specific Text Normalization}
+    \textbf{Three essential transformations:}
+
+    \vspace{0.3cm}
+    \begin{columns}[T]
+        \begin{column}{0.32\textwidth}
+            \begin{block}{1. Diacritics}
+                \centering
+                Legacy Unicode fix\\[0.2cm]
+                \texttt{ş → ș}\\
+                \texttt{ţ → ț}\\[0.2cm]
+                \footnotesize cedilla → comma-below
+            \end{block}
+        \end{column}
+
+        \begin{column}{0.32\textwidth}
+            \begin{block}{2. Dialect Harmony}
+                \centering
+
+                Moldovan → Romanian\\[0.2cm]
+                \texttt{sînt → sânt}\\
+                \texttt{vînt → vânt}\\[0.2cm]
+                \footnotesize mid-word î → â
+            \end{block}
+        \end{column}
+
+        \begin{column}{0.32\textwidth}
+            \begin{block}{3. Placeholders}
+                \centering
+
+                Remove \$NE\$ tokens\\[0.2cm]
+                Anonymized named entities in MOROCO\\[0.2cm]
+                \footnotesize prevents noise
+            \end{block}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.4cm}
+    \begin{center}
+        \textbf{Result:} Unified vocabulary across Romanian \& Moldavian text
+    \end{center}
+\end{frame}
+
+%=================================================================
+\begin{frame}{Tokenization \& Feature Selection}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{POS Filtering Strategy}
+            \begin{itemize}
+                \item \textbf{Keep:} Nouns, Proper Nouns, Adjectives
+                \item \textbf{Remove:} Verbs, function words
+            \end{itemize}
+
+            \vspace{0.2cm}
+            \begin{block}{Why?}
+                Nouns/adjectives = \textbf{topical content}\\
+                Verbs = writing style, not topic
+            \end{block}
+
+            \vspace{0.2cm}
+            \textbf{Tool:} spaCy \texttt{ro\_core\_news\_sm}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \textbf{TF-IDF Configuration}
+            \begin{table}
+                \small
+                \begin{tabular}{ll}
+                    \toprule
+                    \textbf{Parameter} & \textbf{Value} \\
+                    \midrule
+                    max\_df & 0.4 \\
+                    min\_df & 5 \\
+                    n-grams & (1, 2) \\
+                    sublinear\_tf & True \\
+                    \midrule
+                    \textbf{Final vocab} & \textbf{4,678} \\
+                    \bottomrule
+                \end{tabular}
+            \end{table}
+
+            \vspace{0.2cm}
+            \textbf{Stopwords:} 539 total\\
+            \footnotesize (including 81 news-specific terms)
+        \end{column}
+    \end{columns}
+\end{frame}
+
+%=================================================================
+\begin{frame}{LDA Model Configuration}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \textbf{Latent Dirichlet Allocation}
+            \begin{itemize}
+                \item Documents = mixtures of topics
+                \item Topics = probability over words
+                \item Unsupervised learning
+            \end{itemize}
+
+            \vspace{0.3cm}
+            \begin{block}{Configuration}
+                \begin{tabular}{ll}
+                    Topics & 6 (= categories) \\
+                    Method & Online Variational Bayes \\
+                    Iterations & 750 \\
+                    Random seed & 42 \\
+                \end{tabular}
+            \end{block}
+        \end{column}
+
+        \begin{column}{0.42\textwidth}
+            \textbf{Model Output:}
+
+            \vspace{0.3cm}
+            \begin{block}{$\theta$ (doc-topic)}
+                \centering
+                Each document gets a probability distribution over 6 topics
+            \end{block}
+
+            \vspace{0.2cm}
+            \begin{block}{$\phi$ (topic-word)}
+                \centering
+                Each topic gets a probability distribution over 4,678 words
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+%=================================================================
+\begin{frame}{Discovered Topics: Top Words}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{TFIDFLA-topic-words-viz.png}
+        \caption{Top 10 words per topic with their weights}
+    \end{figure}
+\end{frame}
+
+%=================================================================
+\section{Experimental Results}
+%=================================================================
+
+\begin{frame}{Document Distribution Across Topics}
+    % make the top columns narrower so the figure below has more room
+    \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.50\textwidth}
+            \centering
+            \textbf{Observations:}\\[0.15cm]
+            \begin{itemize}
+                \item Topic 0 dominates (39.8\%)
+                \item Topic 5 smallest (4.9\%)
+                \item Reflects source data imbalance
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.30\textwidth}
+            \centering
+            \begin{block}{Topic Labels}
+                \footnotesize
+                \begin{tabular}{|c|l|}
+                    \hline
+                    0 & Politics \\ \hline
+                    1 & Economy \\ \hline
+                    2 & Sports \\ \hline
+                    3 & Science/Life \\ \hline
+                    4 & Events \\ \hline
+                    5 & Elections \\ \hline
+                \end{tabular}
+            \end{block}
+        \end{column}
+    \end{columns}
+
+    \vfill
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth,height=0.375\textheight,keepaspectratio]{TFIDFLDA-document-distribution-by-topic.png}
+        \caption{\footnotesize Documents assigned per topic}
+    \end{figure}
+\end{frame}
+
+%=================================================================
+\begin{frame}{Topic-Category Correspondence}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.75\textwidth,height=0.45\textheight,keepaspectratio]{TFIDFLDA-topic-category-correspondance-heatmap.png}
+        \caption{Percentage of each category assigned to each topic}
+    \end{figure}
+
+    \begin{columns}[T]
+        \begin{column}{0.32\textwidth}
+            \begin{block}{\textcolor{green!70!black}{\checkmark} Strong}
+                \centering
+                Politics → T0\\
+                \textbf{87.1\%}
+            \end{block}
+        \end{column}
+
+        \begin{column}{0.32\textwidth}
+            \begin{block}{\textcolor{orange}{\checkmark} Moderate}
+                \centering
+                Finance → T1: 42\%\\
+                Sports → T2: 37\%
+            \end{block}
+        \end{column}
+
+        \begin{column}{0.32\textwidth}
+            \begin{block}{\textcolor{red}{$\times$} Confusion}
+                \centering
+                Science/Tech overlap in T1 \& T3
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+%=================================================================
+
+\begin{frame}{Model Confidence Analysis}
+    \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.45\textwidth}
+            \begin{itemize}
+                \item Most documents have \textbf{moderate-to-high} topic affinity
+                \item Low confidence ($\sim$0.17) = multi-topic or ambiguous content.
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.45\textwidth}
+            \centering
+            \textbf{Confidence Statistics:}
+
+            \begin{table}
+                \begin{tabular}{l|c}
+                    \toprule
+                    Mean & 0.65 \\
+                    Median & 0.63 \\
+                    Min & 0.17 \\
+                    Max & 0.99 \\
+                    \bottomrule
+                \end{tabular}
+            \end{table}
+
+        \end{column}
+    \end{columns}
+
+    \vfill
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth,height=0.4\textheight,keepaspectratio]{TFIDFLDA-topic-assignment-confidence.png}
+        \caption{\footnotesize Distribution of max topic probability}
+    \end{figure}
+\end{frame}
+
+%=================================================================
+\begin{frame}{Example Topic Assignments}
+    \textbf{How the model classifies real documents:}
+
+    \vspace{0.3cm}
+    \begin{block}{Example 1: Politics (Confidence: 0.89)}
+        \footnotesize
+        \textit{``Ministrul a declarat că proiectul de lege va fi votat în parlament...''}\\
+        $\rightarrow$ \textbf{Topic 0} (stat, țară, președinte, ministru)
+    \end{block}
+
+    \vspace{0.2cm}
+    \begin{block}{Example 2: Sports (Confidence: 0.72)}
+        \footnotesize
+        \textit{``Echipa a câștigat meciul cu scorul de 3-1 în minutul 90...''}\\
+        $\rightarrow$ \textbf{Topic 2} (meci, echipă, scor, jucător)
+    \end{block}
+
+    \vspace{0.2cm}
+    \begin{block}{Example 3: Finance (Confidence: 0.68)}
+        \footnotesize
+        \textit{``Compania a raportat o creștere de 15\% pe piața europeană...''}\\
+        $\rightarrow$ \textbf{Topic 1} (companie, euro, piață, creștere)
+    \end{block}
+\end{frame}
+
+%=================================================================
+\section{Conclusions}
+%=================================================================
+
+\begin{frame}{Key Takeaways \& Future Directions}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{\textcolor{green!70!black}{\checkmark} What We Achieved:}
+            \begin{itemize}
+                \item Romanian preprocessing pipeline (diacritics, dialect harmony)
+                \item 6 interpretable topics extracted
+                \item Strong alignment for politics (\textbf{87\%})
+                \item Moderate for sports (37\%) and finance (42\%)
+                \item Mean confidence: \textbf{0.65}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.48\textwidth}
+            \textbf{\textcolor{blue}{$\rightarrow$} Future Improvements:}
+            \begin{itemize}
+                \item Balanced sampling to reduce category bias
+                \item More topics for better science/tech separation
+                \item Hyperparameter tuning ($\alpha$, $\beta$, K)
+                \item Neural approaches (BERTopic) for comparison
+                \item Full dataset training
+            \end{itemize}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.4cm}
+    \begin{block}{Bottom Line}
+        Classical LDA with proper preprocessing remains effective for interpretable topic discovery in Romanian text
+    \end{block}
+\end{frame}
+
+%=================================================================
+% THANK YOU SLIDE
+%=================================================================
+\begin{frame}
+    \begin{center}
+        {\Huge\bfseries Thank You!}
+
+        \vspace{1cm}
+        {\Large Questions?}
+
+        \vspace{0.5cm}
+        {\small Stanea Adrian-Bogdan}\\
+        {\footnotesize\texttt{stanea.adrian@student.utcluj.ro}}
+    \end{center}
+\end{frame}
+
+%=================================================================
+\end{document}
